@@ -12,6 +12,7 @@ class SimpleLayer:
     weight_row_mat = None
     weight_col_mat = None
     plot_mat = [] # for drawing plots
+    neuron_history_mat = []
     num_neurons = 0
     delta = 0 # the amount to move the source layer
     target = None
@@ -29,6 +30,8 @@ class SimpleLayer:
         self.neuron_row_array = np.zeros((1, num_neurons))
         self.neuron_col_array = np.zeros((num_neurons, 1))
         # We only have weights if there is another layer below us
+        for i in range(num_neurons):
+            self.neuron_history_mat.append([])
         if(target != None):
             self.target = target
             target.source = self
@@ -43,6 +46,7 @@ class SimpleLayer:
         self.weight_row_mat = None
         self.weight_col_mat = None
         self.plot_mat = [] # for drawing plots
+        self. neuron_history_mat = []
         self.num_neurons = 0
         self.delta = 0 # the amount to move the source layer
         self.target = None
@@ -80,6 +84,10 @@ class SimpleLayer:
 
             # Transpose the neuron array and save for learn()
             self.neuron_col_array = self.neuron_row_array.T
+
+        for i in range(self.num_neurons):
+            self.neuron_history_mat[i].append(self.neuron_row_array[0][i])
+
 
     # In learning, the basic goal is to adjust the weights that set this layer's neurons (in this implementation, the source layer). This is done
     # by backpropagating the error delta from this layer to the source layer. Since we only want to adjust the weights that participated in the
@@ -132,12 +140,10 @@ class SimpleLayer:
         return "layer {}: \ntarget = {}\nsource = {}\nneurons (row) = {}\nweights (row) = \n{}".format(self.name, target_name, source_name, self.neuron_row_array, self.weight_row_mat)
 
     # create a line chart of the plot matrix that we've been building
-    def plot_matrix(self, var_name: str, fig_num: int, transpose: bool = False):
+    def plot_weight_matrix(self, var_name: str, fig_num: int):
         title = "{} to {} {}".format(self.name, self.target.name, var_name)
         plt.figure(fig_num)
         np_mat = np.array(self.plot_mat)
-        if transpose:
-            np_mat = np_mat.T
 
         i = 0
         for row in np_mat.T:
@@ -151,5 +157,18 @@ class SimpleLayer:
             src_n = i % self.num_neurons
             targ_n = int(i/self.num_neurons)
             names.append("{} s:t[{}:{}]".format(var_name, src_n, targ_n))
+        plt.legend(names)
+        plt.title(title)
+
+    def plot_neuron_matrix(self, fig_num: int):
+        title = "{} neuron history".format(self.name)
+        plt.figure(fig_num)
+        np_mat = np.array(self.neuron_history_mat)
+
+        plt.plot(np_mat.T, '-o', linestyle=' ', ms=2)
+
+        names = []
+        for i in range(self.num_neurons):
+            names.append("neuron {}".format(i))
         plt.legend(names)
         plt.title(title)
