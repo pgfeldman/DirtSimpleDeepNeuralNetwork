@@ -139,7 +139,7 @@ plt.legend(names)
 for layer in reversed(layer_array):
     if layer.target != None:
         fig_num += 1
-        layer.plot_weight_matrix(fig_num)
+        layer.plot_weight_matrix("weights", fig_num)
 
 for layer in reversed(layer_array):
     fig_num += 1
