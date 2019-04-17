@@ -22,6 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import types
 import typing
+import math
 
 # methods --------------------------------------------
 class SimpleLayer:
@@ -87,7 +88,8 @@ class SimpleLayer:
     def train(self):
         # if not the bottom layer, we can record values for plotting
         if(self.target != None):
-            self.plot_mat.append(self.nparray_to_list(self.weight_row_mat))
+            fstep = math.ceil(self.weight_row_mat.size/10.0)
+            self.plot_mat.append(self.nparray_to_list(self.weight_row_mat, int(fstep)))
 
         # if we're not the top layer, propagate weights
         if self.source != None:
@@ -143,24 +145,40 @@ class SimpleLayer:
         return self.delta
 
     # helper function to turn a NumPy array to a Python list
-    def nparray_to_list(self, vals: np.array) -> typing.List[float]:
+    def nparray_to_list(self, vals: np.array, step:int = 1) -> typing.List[float]:
+        a = vals.flatten().tolist()
+        if step == 1:
+            return a
         data = []
-        for x in np.nditer(vals):
-            data.append(float(x))
+        for i in range(0, len(a), step):
+            data.append(a[i])
         return data
 
     def to_string(self):
         target_name = "no target"
         source_name = "no source"
+        num_weights = 0
+        num_neurons = self.neuron_row_array.size
         if self.target != None:
             target_name = self.target.name
+            num_weights = self.weight_row_mat.size
         if self.source != None:
             source_name = self.source.name
-        return "layer {}: \ntarget = {}\nsource = {}\nneurons (row) = {}\nweights (row) = \n{}".format(self.name, target_name, source_name, self.neuron_row_array, self.weight_row_mat)
+
+        if num_neurons < 10 & num_weights < 100:
+            return "layer {}: \ntarget = {}\nsource = {}\nneurons (row) = {}\nweights (row) = \n{}".format(self.name, target_name, source_name, self.neuron_row_array, self.weight_row_mat)
+
+        return "layer {}: \ntarget = {}\nsource = {}\nnum neurons (row) = {}\nnum weights (row) = {}".format(self.name, target_name, source_name, num_neurons, num_weights)
 
     # create a line chart of the plot matrix that we've been building
     def plot_weight_matrix(self, var_name: str, fig_num: int):
+
+
         title = "{} to {} {}".format(self.name, self.target.name, var_name)
+        np_mat = np.array(self.plot_mat)
+        if len(np_mat.T) > 100:
+            print("Too many weights {} to plot {}".format(len(np_mat.T), title))
+            return
         plt.figure(fig_num)
         np_mat = np.array(self.plot_mat)
 
@@ -172,11 +190,12 @@ class SimpleLayer:
 
         names = []
         num_weights = self.num_neurons * self.target.num_neurons
-        for i in range(num_weights):
-            src_n = i % self.num_neurons
-            targ_n = int(i/self.num_neurons)
-            names.append("{} s:t[{}:{}]".format(var_name, src_n, targ_n))
-        plt.legend(names)
+        if num_weights < 10:
+            for i in range(num_weights):
+                src_n = i % self.num_neurons
+                targ_n = int(i/self.num_neurons)
+                names.append("{} s:t[{}:{}]".format(var_name, src_n, targ_n))
+            plt.legend(names)
         plt.title(title)
 
     def plot_neuron_matrix(self, fig_num: int):
@@ -187,7 +206,8 @@ class SimpleLayer:
         plt.plot(np_mat.T, '-o', linestyle=' ', ms=2)
 
         names = []
-        for i in range(self.num_neurons):
-            names.append("neuron {}".format(i))
-        plt.legend(names)
+        if self.num_neurons < 10:
+            for i in range(self.num_neurons):
+                names.append("neuron {}".format(i))
+            plt.legend(names)
         plt.title(title)
